@@ -1,0 +1,430 @@
+﻿@using DutyFree.Web.ViewModels.Products
+@model IndexViewModel
+
+@{
+    ViewBag.Title = "Správa produktů";
+}
+
+@section header {
+    <h2 class="header-title">Správa produktů</h2>
+}
+
+<div class="container">
+    <input type="image" class="pull-right add" src="~/site-files/add.png">
+
+    <table class="table edit-inactive add-inactive">
+        <thead>
+            <tr>
+                <th class="product-table-name-header">Produkt</th>
+                <th class="product-table-image"></th>
+                <th class="product-table-price">Cena za ks</th>
+                <th class="product-table-quantity">Aktuální množství</th>
+                <th class="product-table-buttons"></th>
+            </tr>
+        </thead>
+        <tbody class="products-table-body">
+            @foreach (var product in Model.Products)
+            {
+                <tr class="first-line @product.Id">
+                    <td class="editable-text product-table-name">@product.Name</td>
+                    <td class="editable-file product-table-image">
+                        @if (!string.IsNullOrEmpty(product.ImageUrl))
+                        {
+                            <img src="@Url.Content(product.ImageUrl)" />
+                        }
+                    </td>
+                    <td class="product-table-price">
+                        @if (!product.PriceAfterDiscount.HasValue)
+                        {
+                            <span class="editable-price">@product.Price</span> <span>Kč</span>
+                        }
+                        else
+                        {
+                            <strike class="editable-price">@product.Price</strike> <strike>Kč</strike> <span class="editable-price-discount">@product.PriceAfterDiscount</span> <span>Kč</span>
+                        }
+                    </td>
+                    <td class="editable-quantity product-table-quantity">@product.Quantity ks</td>
+                    <td class="product-table-buttons">
+                        <button type="button" class="button-image text-center button-edit @product.Id" name="@product.Id"><img src="~/site-files/edit.png" /></button>
+                        <button type="button" class="button-image text-center button-delete @product.Id" name="@product.Id"><img src="~/site-files/delete.png" /></button>
+                    </td>
+                </tr>
+                <tr class="second-line @product.Id">
+                    <td class="product-table-category">
+                        @if (product.CategoryName != null)
+                        {
+                            <span class="product-tag">@product.CategoryName</span>
+                        }
+                        @if (product.New)
+                        {
+                            <span class="product-tag">#Novinka</span>
+                        }
+                        @if (product.PriceAfterDiscount > 0)
+                        {
+                            <span class="product-tag">#Sleva</span>
+                        }
+                    </td>
+                    <td class="product-table-new hidden">
+                        <label class="checkbox-inline">
+                            <input class="checkbox new" type="checkbox" @(product.New ? "checked=\"checked\"" : "")>
+                            <span>Novinka</span>
+                        </label>
+                    </td>
+                    <td class="product-table-discount hidden">
+                        <label class="checkbox-inline">
+                            <input class="checkbox discount @product.Id" type="checkbox" @(product.PriceAfterDiscount.HasValue ? "checked=\"checked\"" : "")>
+                            <span>Sleva</span>
+                        </label>
+                    </td>
+                    <td class="product-table-quantity hidden">
+                        <button type="submit" class="btn btn-success save @product.Id" name="@product.Id">Uložit</button>
+                    </td>
+                    <td class="product-table-buttons hidden">
+                        <button type="submit" class="btn btn-cancel btn-group throw-away @product.Id" name="@product.Id">Zahodit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(".add").click(function () {
+                if ($(".table").hasClass("add-inactive")) {
+                    $(".table").addClass("add-active");
+                    $(".table").removeClass("add-inactive");
+
+                    $(`<tr class="add-first-line">
+                            <td class="editable-text product-table-name">
+                                <input class="form-control add-input-text" />
+                            </td>
+                            <td class="editable-file product-table-image">
+                                <label class="btn btn-danger btn-inverse" width="10%">
+                                    Vybrat soubor
+                                    <input type="file" accept="image/x-png, image/jpeg" class="add-input-file" style="display: none" />
+                                </label>
+                            </td>
+                            <td class="text-center editable-price product-table-price">
+                                <input class="form-control add-input-price" required type="number" />
+                            </td>
+                            <td class="text-center editable-quantity product-table-quantity" width="28%">
+                                <input class="form-control add-input-quantity" required type="number" />
+                            </td>
+                            <td class="product-table-buttons">
+                            </td>
+                        </tr>
+                        <tr class="add-second-line">
+                            <td class="product-table-category">
+                                <select class="form-control add-select-category">
+                                    <option disabled selected>Zvolit kategorii</option>
+                                    <option value="1">#Svačina</option>
+                                    <option value="2">#Slané</option>
+                                    <option value="3">#Sladké</option>
+                                    <option value="4">#Nápoje</option>
+                                </select>
+                            </td>
+                            <td class="product-table-new">
+                                <label class="checkbox-inline">
+                                    <input class="checkbox add-new" type="checkbox" name="isNew">
+                                    <span>Novinka</span>
+                                </label>
+                            </td>
+                            <td class="product-table-discount">
+                                <label class="checkbox-inline">
+                                    <input class="checkbox add-discount" type="checkbox" name="discount">
+                                    <span>Sleva</span>
+                                </label>
+                            </td>
+                            <td class="product-table-quantity">
+                                <button type="submit" class="btn btn-success add-save" name="0">Uložit</button>
+                            </td>
+                            <td class="product-table-buttons">
+                                <button type="submit" class="btn btn-cancel btn-group add-throw-away" name="0">Zahodit</button>
+                            </td>
+                        </tr>
+                    `).prependTo('.products-table-body');
+                }
+
+                $(".products-table-body").on("click", ".add-throw-away", function () {
+                    addFinish();
+                });
+
+                $(".add-discount").change(function () {
+                    var inputPrice = $(".add-first-line").find(".add-input-price").val();
+                    checkAddCheckboxes(inputPrice);
+                });
+
+                $(".products-table-body").on("click", ".add-save", function () {
+                    var formData = new FormData();
+                    var files = $(".add-input-file").get(0).files;
+                    var productName = $(".add-input-text").val();
+                    var productPrice = $(".add-input-price").val();
+                    var productQuantity = $(".add-input-quantity").val();
+                    var productCategory = $(".add-select-category").val();
+                    if (productCategory == 0) {
+                        productCategory = null;
+                    }
+                    var productCategoryName = $(".add-select-category :selected").text();
+
+                    var productIsNew;
+                    if ($(".add-new").is(":checked")) {
+                        productIsNew = true;
+                    }
+                    else {
+                        productIsNew = false;
+                    }
+
+                    var productDiscountPrice;
+                    if ($(".add-discount").is(":checked")) {
+                        productDiscountPrice = $(".add-input-price-discount").val();
+                        if (productDiscountPrice == "") {
+                            productDiscountPrice = null;
+                        }
+                    }
+                    else {
+                        productDiscountPrice = null;
+                    }
+
+                    formData.append("name", productName);
+                    formData.append("price", productPrice);
+                    formData.append("quantity", productQuantity);
+                    formData.append("picture", files[0]);
+                    formData.append("categoryId", productCategory);
+                    formData.append("categoryName", productCategoryName);
+                    formData.append("new", productIsNew);
+                    formData.append("priceAfterDiscount", productDiscountPrice);
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '@Url.Action("Add","Products")',
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (result) {
+                            $('.products-table-body > tr:last').after(result);
+                            addFinish();
+                        }
+                    });
+                });
+            });
+
+            $(".products-table-body").on("click", ".button-delete", function () {
+                var getId = $(this).attr("name");
+                $.ajax({
+                    url: "@Url.Action("Delete","Products")",
+                    type: "POST",
+                    data: { id: getId },
+                    success: function () {
+                        $('table .' + getId).remove();
+                    }
+                });
+            });
+
+            $(".products-table-body").on("click", ".button-edit", function () {
+                var getId = $(this).attr("name");
+                var textPrice = $(".first-line." + getId).find(".editable-price").text();
+                var textPriceAfterDiscount = $(".first-line." + getId).find(".editable-price-discount").text();
+                checkCheckboxes(getId, textPrice, textPriceAfterDiscount);
+                if ($(".table").hasClass("edit-inactive")) {
+                    $(".second-line." + getId).find(".product-table-discount").removeClass("hidden");
+                    $(".second-line." + getId).find(".product-table-new").removeClass("hidden");
+                    $(".second-line." + getId).find(".product-table-quantity").removeClass("hidden");
+                    $(".second-line." + getId).find(".product-table-buttons").removeClass("hidden");
+                    $(".button-edit", "." + getId).hide();
+                    $(".button-delete", "." + getId).hide();
+                    $(".table").addClass("edit-active");
+                    $(".table").removeClass("edit-inactive");
+
+                    $(this).parents('tr').find('td.editable-text').each(function () {
+                        var html = $(this).html();
+                        var input = $(`<input value="${html}" class="form-control input-text" required type="text" />`);
+                        $(this).html(input);
+                    });
+
+                    $(this).parents('tr').find('.editable-price').each(function () {
+                        var html = $(this).html();
+                        var input = $(`<input value="${html}" class="form-control input-price" required type="number" />`);
+                        $(this).closest("td").html(input);
+                    });
+
+                    $(this).parents('tr').find('td.editable-quantity').each(function () {
+                        var html = $(this).html();
+                        var input = $(`<input value=${html} class="form-control input-quantity" required type="number" />`);
+                        $(this).html(input);
+                    });
+
+                    $(this).parents('tr').find('td.editable-file').each(function () {
+                        var input = $(`
+                                        <label class="btn btn-danger btn-inverse" width="10%">
+                                        Vybrat soubor
+                                        <input type="file" accept="image/x-png, image/jpeg" class="input-file" style="display: none" />
+                                        </label>
+                                        `);
+                        $(this).html(input);
+                    });
+
+                    $(".second-line." + getId).find(".product-table-category").html(`
+                            <select class="form-control select-category ${getId}">
+                                <option disabled selected>Zvolit kategorii</option>
+                                <option value="1">#Svačina</option>
+                                <option value="2">#Slané</option>
+                                <option value="3">#Sladké</option>
+                                <option value="4">#Nápoje</option>
+                            </select>`);
+                }
+
+                $(".discount." + getId).change(function () {
+                    var inputPrice = $(".first-line." + getId).find(".input-price").val();
+                    var inputPriceAfterDiscount = $(".first-line." + getId).find(".editable-price-discount").text();
+                    checkCheckboxes(getId, inputPrice, inputPriceAfterDiscount);
+                });
+
+                $(".products-table-body").on("click", ".save", function () {
+                    editFinish(this, getId);
+
+                    var formData = new FormData();
+                    var files = $(".input-file").get(0).files;
+                    var productName = $(".input-text").val();
+                    var productPrice = $(".input-price").val();
+                    var productQuantity = $(".input-quantity").val();
+                    var productCategory = $(".select-category." + getId).val();
+                    if (productCategory == 0) {
+                        productCategory = null;
+                    }
+                    var productCategoryName = $(".select-category :selected").text();
+
+                    var productIsNew;
+                    if ($(".new").is(":checked")) {
+                        productIsNew = true;
+                    }
+                    else {
+                        productIsNew = false;
+                    }
+
+                    var productDiscountPrice;
+                    if ($(".discount." + getId).is(":checked")) {
+                        productDiscountPrice = $(".input-price-discount").val();
+                        if (productDiscountPrice == "") {
+                            productDiscountPrice = null;
+                        }
+                    }
+                    else {
+                        productDiscountPrice = null;
+                    }
+
+                    formData.append("id", getId);
+                    formData.append("name", productName);
+                    formData.append("price", productPrice);
+                    formData.append("quantity", productQuantity);
+                    formData.append("picture", files[0]);
+                    formData.append("categoryId", productCategory);
+                    formData.append("categoryName", productCategoryName);
+                    formData.append("new", productIsNew);
+                    formData.append("priceAfterDiscount", productDiscountPrice);
+
+                    $.ajax({
+                        type: 'POST',
+                        url: '@Url.Action("Edit","Products")',
+                        data: formData,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        success: function (result) {
+                            saveData(getId, result);
+                        }
+                    });
+                });
+
+                $(".products-table-body").on("click", ".throw-away", function () {
+                    editFinish(this, getId);
+                    $.ajax({
+                        url: "@Url.Action("GetData","Products")",
+                        type: "POST",
+                        data: { id: getId },
+                        success: function (result) {
+                            saveData(getId, result);
+                        }
+                    });
+                });
+            });
+        });
+
+        function saveData(getId, result) {
+            $("td.editable-text", "." + getId).html(result.Name);
+            if ($('.discount.' + getId).is(":checked")) {
+                $(".product-table-price", "." + getId).html(`<strike class="editable-price">${result.Price} Kč</strike> <span class="editable-price-discount">${result.PriceAfterDiscount}</span> <span>Kč</span>`);
+            } else {
+                $(".product-table-price", "." + getId).html(`<span class="editable-price">${result.Price}</span> <span>Kč</span>`);
+            }
+            $("td.editable-quantity", "." + getId).html(result.Quantity + " ks");
+
+            var picture = $(`<img src="${result.ImageUrl}" />`);
+            $("td.editable-file", "." + getId).html(picture);
+
+            var tagsHtml;
+            if (result.CategoryName != null) {
+                tagsHtml = $(`<span class="product-tag">${result.CategoryName}</span>`);
+            }
+            else {
+                tagsHtml = $(` `);
+            }
+            if (result.New) {
+                tagsHtml.append(` <span class="product-tag">#Novinka</span>`)
+            }
+            if (result.PriceAfterDiscount > 0) {
+                tagsHtml.append(` <span class="product-tag">#Sleva</span>`)
+            }
+            $(".second-line." + getId).find(".product-table-category").html(tagsHtml);
+        }
+
+        function editFinish(selectThis, getId) {
+            $(".button-edit", "." + getId).show();
+            $(".button-delete", "." + getId).show();
+            $(selectThis).parents('tr.second-line').find(".product-table-discount").addClass("hidden");
+            $(selectThis).parents('tr.second-line').find(".product-table-new").addClass("hidden");
+            $(selectThis).parents('tr.second-line').find(".product-table-quantity").addClass("hidden");
+            $(selectThis).parents('tr.second-line').find(".product-table-buttons").addClass("hidden");
+            $(".table").removeClass("edit-active");
+            $(".table").addClass("edit-inactive");
+        }
+
+        function addFinish() {
+            $(".add-first-line").remove();
+            $(".add-second-line").remove();
+            $(".table").removeClass("add-active");
+            $(".table").addClass("add-inactive");
+        }
+
+        function checkCheckboxes (getId, price, priceAfterDiscount) {
+            if ($('.discount.' + getId).is(":checked")) {
+                $(".first-line." + getId).find(".product-table-price").html(`
+                            <input value="${price}" class="form-control input-price" required type="number" />
+                            <span>→</span>
+                            <input value="${priceAfterDiscount}" class="form-control input-price-discount" required type="number" />
+                            `);
+            } else {
+                $(".first-line." + getId).find(".product-table-price").html(`
+                            <input value="${price}" class="form-control input-price" required type="number" />
+                            `);
+            }
+        }
+
+        function checkAddCheckboxes(price) {
+            if ($('.add-discount').is(":checked")) {
+                $(".add-first-line").find(".product-table-price").html(`
+                                <input value="${price}" class="form-control add-input-price" required type="number" />
+                                <span>→</span>
+                                <input class="form-control add-input-price-discount" required type="number" />
+                                `);
+            } else {
+                $(".add-first-line").find(".product-table-price").html(`
+                                <input value="${price}" class="form-control add-input-price" required type="number" />
+                                `);
+            }
+        }
+    </script>
+}

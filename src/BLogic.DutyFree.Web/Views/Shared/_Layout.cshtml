@@ -1,0 +1,101 @@
+﻿@using DutyFree.Web.Class
+@using DutyFree.Core.Enums
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id" content="904851596644-3q4opi0vuuv4jt28kmm6gqtnklk4b1qm.apps.googleusercontent.com">
+    <title>@ViewBag.Title - DutyFree</title>
+    <script src="https://apis.google.com/js/platform.js?onload=start" async defer></script>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("styles", required: false)
+</head>
+<body>
+    <div class="header">
+        <div class=" navbar navbar-inverse navbar-fixed-top navbar-transparent">
+            <div class="navbar-header">
+                <div class="navbar-brand navbar-logo">
+                    <a href='@Url.Action("Index", "Home")'>
+                        <img src="@Url.Content("/site-files/logo.png")" class="main-logo" />
+                    </a>
+                </div>
+            </div>
+            @if (SessionState.CurrentUser != null)
+            {
+                <div class="menu">
+                    <div class="dropdown">
+                        <div class="dropbtn dropclick">
+                            <div class="menu-name">
+                                @SessionState.CurrentUser.FullName
+                            </div>
+                            <img src="@SessionState.CurrentUser.ProfileImgUrl" class="menu-image" />
+                        </div>
+                        <div class="dropdown-content hidden">
+                            @Html.ActionLink("Produkty", "Index", "Home")
+                            @Html.ActionLink("Moje objednávky", "ByUser", "Orders")
+                            @if (SessionState.CurrentUser.Role == Role.Admin)
+                            {
+                                @Html.ActionLink("Správa produktů", "Index", "Products")
+                                @Html.ActionLink("Všechny objednávky", "All", "Orders")
+                            }
+                            <a href="/" class="logout">Odhlásit se</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        @RenderSection("header", required: true)
+    </div>
+
+    <div class="body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.dropclick').click(function () {
+            $('.dropdown-content').addClass('default');
+            $('.dropdown-content').removeClass('hidden');
+        });
+
+        $(document).mouseup(function (e) {
+            var container = $(".dropclick");
+            if (!container.is(e.target) && container.has(e.target).length === 0) {
+                $('.dropdown-content').addClass('hidden');
+                $('.dropdown-content').removeClass('default');
+            }
+        });
+
+        window.gapi.load("auth2", function () {
+            auth2 = gapi.auth2.init();
+        });
+
+        $(".logout").click(function () {
+            signOut();
+        });
+
+        function signOut() {
+            gapi.auth2.getAuthInstance().signOut();
+
+            $.ajax({
+                url: "@Url.Action("Logout","Security")",
+                success: function () {
+                    document.location.href = "/";
+                }
+            });
+        }
+    });
+</script>

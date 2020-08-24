@@ -1,0 +1,258 @@
+﻿@using DutyFree.Web.ViewModels.Products
+@using DutyFree.Core.Enums
+@model IndexViewModel
+
+@{
+    ViewBag.Title = "Produkty";
+}
+
+@section header {
+    <div class="search-container">
+        <div class="search-column-1">
+            <h2 class="header-title">Na co máš chuť?</h2>
+            <div class="search-control">
+                <input class="form-control search-input" />
+            </div>
+        </div>
+        <div class="search-column-2">
+            <button type="button" class="btn btn-success search-button">Vyhledat</button>
+        </div>
+    </div>
+    <div class="header-tags-container">
+        <div class="header-tags">
+            <div class="header-tag">
+                <span class="header-tag-text favorite" data-favorite="@FavoriteTag.ByUser">#MojeOblíbené</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text favorite" data-favorite="@FavoriteTag.All">#OblíbenéOstatních</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.Discount)">#Sleva</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.New)">#Novinka</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.Snack)">#Svačina</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.Sweet)">#Sladké</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.Salty)">#Slané</span>
+            </div>
+            <div class="header-tag">
+                <span class="header-tag-text category-tag" data-category="@((int)CategoryName.Drink)">#Nápoje</span>
+            </div>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Search", Model)
+
+@section scripts
+{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            InitializeButtons();   
+
+            $(".search-button").click(function () {
+                var name = $(".search-input").val();
+                var favorite;
+                var categoryId;
+
+                if ($("span").is(".favorite.selected")) {
+                    favorite = $(".favorite.selected").data("favorite");
+                    categoryId = null;
+                }
+                if ($("span").is(".category-tag.selected")) {
+                    categoryId = $(".category-tag.selected").data("category");
+                    favorite = null;
+                }
+
+                $.ajax({
+                    url: "@Url.Action("Search","Home")",
+                    type: "POST",
+                    data: { name: name, favorite: favorite, categoryId: categoryId },
+                    success: function (result) {
+                        $(".products-container").replaceWith(result);
+                        InitializeButtons();
+                    },
+                });
+            });
+
+            $(".search-input").keyup(function () {
+                if ($(".search-input").val() != "") {
+                    var name = $(".search-input").val();
+                    var favorite;
+                    var categoryId;
+
+                    if ($("span").is(".favorite.selected")) {
+                        favorite = $(".favorite.selected").data("favorite");
+                        categoryId = null;
+                    }
+                    if ($("span").is(".category-tag.selected")) {
+                        categoryId = $(".category-tag.selected").data("category");
+                        favorite = null;
+                    }
+
+                    $(".search-input").after(`<span class="search-cancel">x</span>`);
+
+                    $.ajax({
+                        url: "@Url.Action("AutoComplete","Home")",
+                        type: "POST",
+                        data: { name: name, favorite: favorite, categoryId: categoryId },
+                        success: function (result) {
+                            if (result.names.length != 0) {
+                                $(".search-input").after(`
+                                <div class="search-autocomplete">
+                                    <ul></ul>
+                                </div>`);
+
+                                $(".search-autocomplete > ul").text(``);
+
+                                for (var i = 0; i < result.names.length; i++) {
+                                    var productName = result.names[i];
+                                    var indexOfString = productName.toLowerCase().indexOf(name.toLowerCase());
+                                    var beforeString = productName.slice(0, indexOfString);
+                                    var extractedString = productName.slice(indexOfString, indexOfString + name.length);
+                                    var afterString = productName.slice(indexOfString + name.length, productName.length)
+
+                                    $(".search-autocomplete > ul").append(`<li>
+                                        <span>
+                                            ${beforeString}<b>${extractedString}</b>${afterString}
+                                        </span>
+                                    </li>`);
+                                }
+                            }
+                            else {
+                                $(".search-autocomplete").remove();
+                            }
+                        },
+                    });
+                }
+                else {
+                    $(".search-autocomplete").remove();
+                    $(".search-cancel").remove();
+                }
+            });
+
+            $(".search-control").on("click", ".search-autocomplete > ul > li", function () {
+                var name = $.trim($(this).text());
+                var favorite;
+                var categoryId;
+                
+                if ($("span").is(".favorite.selected")) {
+                    favorite = $(".favorite.selected").data("favorite");
+                    categoryId = null;
+                }
+                if ($("span").is(".category-tag.selected")) {
+                    categoryId = $(".category-tag.selected").data("category");
+                    favorite = null;
+                }
+
+                $.ajax({
+                    url: "@Url.Action("Search","Home")",
+                    type: "POST",
+                    data: { name: name, favorite: favorite, categoryId: categoryId },
+                    success: function (result) {
+                        $(".search-input").val(name);
+                        $(".search-autocomplete").remove();
+                        $(".products-container").replaceWith(result);
+                        InitializeButtons();
+                    },
+                });
+            });
+
+            $(".category-tag").click(function () {
+                var categoryId = $(this).data("category");
+                var categoryName = $(this).text();
+                var name = $(".search-input").val();
+                var favorite = null;
+
+                $("span").removeClass("selected");
+                $(this).addClass("selected");
+
+                $(".search-input").after(`<span class="search-cancel">x</span>`);
+
+                $.ajax({
+                    url: "@Url.Action("Search","Home")",
+                    type: "POST",
+                    data: { name: name, favorite: favorite, categoryId: categoryId },
+                    success: function (result) {
+                        $(".products-container").replaceWith(result);
+                        $(".header-title").text(`Na co máš chuť v ${categoryName}?`);
+                        InitializeButtons();
+                    },
+                });
+            });
+
+            $(".favorite").click(function () {
+                var favorite = $(this).data("favorite");
+                var categoryName = $(this).text();
+                var name = $(".search-input").val();
+                var categoryId = null;
+
+                $("span").removeClass("selected");
+                $(this).addClass("selected");
+
+                $(".search-input").after(`<span class="search-cancel">x</span>`);
+
+                $.ajax({
+                    url: "@Url.Action("Search","Home")",
+                    type: "POST",
+                    data: { name: name, favorite: favorite, categoryId: categoryId },
+                    success: function (result) {
+                        $(".products-container").replaceWith(result);
+                        $(".header-title").text(`Na co máš chuť v ${categoryName}?`);
+                        InitializeButtons();
+                    },
+                });
+            });
+        });
+
+        $(".search-control").on("click", ".search-cancel", function () {
+            $.ajax({
+                url: "@Url.Action("Search","Home")",
+                type: "POST",
+                data: { name: "", favorite: null, categoryId: null },
+                success: function (result) {
+                    $(".products-container").replaceWith(result);
+                    $(".header-title").text(`Na co máš chuť?`);
+                    $(".search-cancel").remove();
+                    $(".search-input").val("");
+                    $(".search-autocomplete").remove();
+                    InitializeButtons();
+                },
+            });
+        });
+
+        function InitializeButtons() {
+            $(".buy-button").click(function () {
+                var getId = $(this).attr("name");
+                var productName = $(".product-name." + getId).text();
+                var getPrice = $(".product-price." + getId).text();
+                var productPrice = Number(getPrice.replace(/[^0-9\.]+/g, ""));
+                var getQuantity = $(".product-quantity." + getId).text();
+                var productQuantity = Number(getQuantity.replace(/[^0-9\.]+/g, ""));
+
+                $.ajax({
+                    url: "@Url.Action("Buy","Home")",
+                    type: "POST",
+                    data: { name: productName, price: productPrice, productId: getId },
+                    success: function (result) {
+                        if (result.success) {
+                            $(".product-quantity." + getId).html("Skladem " + (productQuantity - 1) + " ks");
+                            if (productQuantity == 1) {
+                                $(".product." + getId).remove();
+                            }
+                        }
+                        else {
+                            alert("Something went wrong...");
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+}

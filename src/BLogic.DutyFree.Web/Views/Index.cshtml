@@ -1,0 +1,319 @@
+﻿@using BLogic.DutyFree.DataAccess.Model
+@model List<Product>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h1>Výpis produktů</h1>
+
+<input type="image" class="btn pull-right" src="~/uploads/product/add_small.png" id="add">
+
+
+<div class="clearfix"></div>
+
+<div id="form" style="display: none">
+    @using (Html.BeginForm("Add", "Products", FormMethod.Post, new { @class = "form-horizontal", enctype = "multipart/form-data" }))
+    {
+        <table class="table table-condensed">
+            <tr>
+                <th class="text-center" width="35%">
+                    <input required type="text" class="form-control" name="name">
+                </th>
+                <th class="text-center">
+                    <label class="btn btn-danger btn-inverse" width="10%">
+                        Vybrat soubor
+                        <input required type="file" name="picture" style="display: none">
+                    </label>
+                </th>
+                <th class="text-center" width="20%">
+                    <input required type="number" class="form-control" name="price">
+                </th>
+                <th class="text-center" width="35%">
+                    <input required type="number" class="form-control" name="quantity">
+                </th>
+            </tr>
+
+            <tr>
+                <td class="text-center" width="35%"></td>
+                <td class="text-center" width="10%"></td>
+                <td class="text-center" width="20%"></td>
+                <td class="text-center" width="35%">
+                    <button type="submit" class="btn btn-danger">Uložit</button>
+                    <button type="submit" class="btn btn-inverse btn-group pull-right" id="throwAway">Zahodit</button>
+                </td>
+            </tr>
+        </table>
+
+    }
+</div>
+
+
+
+<table class="table" id="productsTable">
+    <thead>
+        <tr>
+            <th width="40%">Produkt</th>
+            <th width="5%"></th>
+            <th class="text-center" width="15%">Cena za ks</th>
+            <th class="text-center" width="28%">Aktuální množství</th>
+            <th width="12%"></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="add-first-line" style="display: none">
+            <td width="40%"></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="28%"></td>
+            <td width="12%"></td>
+        </tr>
+        <tr class="add-second-line" style="display: none">
+            <td width="40%"></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="28%">
+            </td>
+            <td class="text-center" width="12%">
+            </td>
+        </tr>
+        
+
+
+
+
+        @foreach (Product item in Model)
+        {
+            <tr class="first-line @item.Id">
+                <td width="40%" class="editable-text">@item.Name</td>
+                <td width="5%" class="editable-file">
+                    @if (!string.IsNullOrEmpty(item.ImageName))
+                    {
+                        <img src="@Url.Content("~/uploads/product/" + item.ImageName)" />
+                    }
+                </td>
+                <td class="text-center editable-price" width="15%">@item.Price</td>
+                <td class="text-center editable-quantity" width="28%">@item.Quantity</td>
+                <td width="12%">
+                    <button type="button" class="text-center button-edit @item.Id" name="@item.Id"><img src="~/uploads/product/edit_small.png" /></button>
+                    <button type="button" class="text-center button-delete @item.Id" name="@item.Id"><img src="~/uploads/product/delete_small.png" /></button>
+                </td>
+            </tr>
+            <tr class="second-line @item.Id" style="display: none">
+                <td width="40%"></td>
+                <td width="5%"></td>
+                <td width="15%"></td>
+                <td class="text-center" width="28%">
+                    <button type="submit" class="btn btn-danger save @item.Id" name="@item.Id">Uložit</button>
+                </td>
+                <td class="text-center" width="12%">
+                    <button type="submit" class="btn btn-inverse btn-group throw-away @item.Id" name="@item.Id">Zahodit</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script type="text/javascript">
+    //$("#add").click(function () {
+      //  $("#form").show();
+    //});
+    $(document).ready(function () {
+        $(".throw-away").click(function () {
+            $(".add-first-line").hide();
+            $(".add-second-line").hide();
+        });
+    });
+    $(document).ready(function () {
+        $(".throw-away").click(function () {
+            var getId = $(this).attr("name");
+            $(".button-edit", "." + getId).show();
+            $(".button-delete", "." + getId).show();
+            $(this).parents('tr.second-line').hide();
+
+            $.ajax({
+                url: "@Url.Action("GetData","Products")",
+                type: "POST",
+                data: { id: getId },
+                success: function (result) {
+                    $("td.editable-text", "." + getId).text(result.Name);
+                    $("td.editable-price", "." + getId).html(result.Price);
+                    $("td.editable-quantity", "." + getId).html(result.Quantity);
+                    var picture = $(`<img src="/uploads/product/${result.ImageName}"/>`);
+                    $("td.editable-file", "." + getId).html(picture);
+                },
+                error: function () {
+                    alert('error');
+                }
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $(".save").click(function () {
+            var getId = $(this).attr("name");
+            $(".button-edit", "." + getId).show();
+            $(".button-delete", "." + getId).show();
+            $(this).parents('tr.second-line').hide();
+            var productName = $(".input-text").val();
+            var productPrice = $(".input-price").val();
+            var productQuantity = $(".input-quantity").val();
+
+            $.ajax({
+                url: "@Url.Action("Edit","Products")",
+                type: "POST",
+                data: { id: getId, name: productName, price: productPrice, quantity: productQuantity},
+                success: function (result) {
+                    $("td.editable-text", "." + getId).html(productName);
+                    $("td.editable-price", "." + getId).html(productPrice);
+                    $("td.editable-quantity", "." + getId).html(productQuantity);
+                },
+                error: function () {
+                    alert('error');
+                }
+                });
+        });
+    });
+
+    $(document).ready(function () {
+
+        $('.save').click(function () {
+            var getId = $(this).attr("name");
+            var formData = new FormData();
+            var files = $(".input-file").get(0).files;
+
+
+            formData.append("picture", files[0]);
+
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("EditPicture","Products")',
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (result) {
+                    var picture = $(`<img src="/uploads/product/${result.imageName}"/>`);
+                    $("td.editable-file", "." + getId).html(picture);
+                }
+            })
+        })
+    })
+
+    $(document).ready(function () {
+        $(".button-delete").click(function () {
+            var getId = $(this).attr("name");
+            $.ajax({
+                url: "@Url.Action("Delete","Products")",
+                type: "POST",
+                data: { id: getId },
+                success: function () {
+                    $('table .' + getId).remove();
+                },
+                error: function () {
+                    alert("Fails");
+                }
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $(".button-edit").click(function () {
+            var getId = $(this).attr("name");
+            $("." + getId).show();
+            $(".button-edit", "." + getId).hide();
+            $(".button-delete", "." + getId).hide();
+
+            $(this).parents('tr').find('td.editable-text').each(function () {
+                var html = $(this).html();
+                var input = $(`<input value=${html} class="form-control input-text" required type="text" />`);
+                $(this).html(input);
+            });
+
+            $(this).parents('tr').find('td.editable-price').each(function () {
+                var html = $(this).html();
+                var input = $(`<input value=${html} class="form-control input-price" required type="number" />`);
+                $(this).html(input);
+            });
+
+            $(this).parents('tr').find('td.editable-quantity').each(function () {
+                var html = $(this).html();
+                var input = $(`<input value=${html} class="form-control input-quantity" required type="number" />`);
+                $(this).html(input);
+            });
+
+            $(this).parents('tr').find('td.editable-file').each(function () {
+                var input = $(`
+                                <label class="btn btn-danger btn-inverse" width="10%">
+                                Vybrat soubor
+                                <input required type="file" class="input-file" style="display: none"/>
+                                </label>
+                             `);
+                $(this).html(input);
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $("#add").click(function () {
+            var getId = 0;
+            //$("." + getId).show();
+
+            $(".add-first-line").show().each(function () {
+
+                var input = $(`
+                <td width="40%" class="editable-text">
+                    <input value="" class="form-control input-text" required type="text" />
+                </td>
+                <td width="5%" class="editable-file">
+                    <label class="btn btn-danger btn-inverse" width="10%">
+                        Vybrat soubor
+                        <input required type="file" class="input-file" style="display: none"/>
+                    </label>
+                </td>
+                <td class="text-center editable-price" width="15%">
+                    <input value="" class="form-control input-price" required type="number" />
+                </td>
+                <td class="text-center editable-quantity" width="28%">
+                    <input value="" class="form-control input-quantity" required type="number" />
+                </td>
+                <td width="12%">
+                    <button type="button" class="text-center button-edit ${getId}" name="${getId}" style="display: none"><img src="~/uploads/product/edit_small.png" /></button>
+                    <button type="button" class="text-center button-delete ${getId}" name="${getId}" style="display: none"><img src="~/uploads/product/delete_small.png" /></button>
+                </td>`);
+
+                $(this).html(input);
+            });
+
+            $(".add-second-line").show().each(function () {
+                var input = $(`<td width="40%"></td>
+                <td width="5%"></td>
+                <td width="15%"></td>
+                <td class="text-center" width="28%">
+                    <button type="submit" class="btn btn-danger save ${getId}" name="${getId}">Uložit</button>
+                </td>
+                <td class="text-center" width="12%">
+                    <button type="submit" class="throw-away btn btn-inverse btn-group " name="${getId}">Zahodit</button>
+                </td>`);
+                $(this).html(input);
+            });
+/*
+            $(this).parents('tr').find('td.editable-quantity').each(function () {
+                var html = $(this).html();
+                var input = $(`<input value=${html} class="form-control input-quantity" required type="number" />`);
+                $(this).html(input);
+            });
+
+            $(this).parents('tr').find('td.editable-file').each(function () {
+                var input = $(`
+                                <label class="btn btn-danger btn-inverse" width="10%">
+                                Vybrat soubor
+                                <input required type="file" class="input-file" style="display: none"/>
+                                </label>
+                             `);
+                $(this).html(input);
+            });*/
+        });
+    });
+
+</script>

@@ -1,0 +1,84 @@
+﻿@using DutyFree.Web.ViewModels.Security
+@model IndexViewModel
+
+@{
+    ViewBag.Title = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id" content="836564447545-5vbhu7o230r8b7v1a1fei3vv7hfpdjqh.apps.googleusercontent.com">
+    <title>@ViewBag.Title - Duty Free</title>
+    <script src="https://apis.google.com/js/platform.js?onload=start" async defer></script>
+    <script src="https://apis.google.com/js/api:client.js"></script>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+
+    <div class="login-background">
+        <div class="login-container">
+            <img src="@Url.Content("/site-files/logo.png")" />
+            <hr />
+            <div id="g-sign-in-wrapper">
+                <div class="custom-gplus-sign-in">
+                    <span class="button-text">Přihlásit se</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+</body>
+</html>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".login-button").click(function () {
+            var getId = $(this).attr("name");
+            var userFN = $(".line." + getId).find(".user-first-name").text();
+            var userLN = $(".line." + getId).find(".user-last-name").text();
+            var userEmail = $(".line." + getId).find(".user-email").text();
+            var userImg = $(".line." + getId).find(".user-profile-img-url").text();
+            var userRole = $(".line." + getId).find(".user-role").text();
+
+            var userId = parseInt(getId);
+
+            $.ajax({
+                url: "@Url.Action("LoginAction","Security")",
+                type: "POST",
+                data: { "UserID": userId, "FirstName": userFN, "LastName": userLN, "Email": userEmail, "ProfileImgUrl": userImg, "Role": userRole },
+                success: function () {
+                    document.location.href = "/";
+                }
+            });
+        });
+
+        window.gapi.load("auth2", function () {
+            auth2 = gapi.auth2.init();
+        });
+
+        $(".custom-gplus-sign-in").click(function () {
+            auth2.signIn({ prompt: "select_account" }).then(signInCallback);
+        });
+
+        function signInCallback() {
+            const authResponse = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse(true);
+            var id_token = authResponse.id_token;
+
+            $.ajax({
+                type: 'POST',
+                url: "@Url.Action("Google","Security")",
+                data: { "idToken": id_token },
+                success: function () {
+                    document.location.href = "/";
+                }
+            });
+        }
+    });
+</script>

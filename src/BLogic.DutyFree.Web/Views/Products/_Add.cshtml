@@ -1,0 +1,64 @@
+﻿@using DutyFree.Web.ViewModels.Products
+@model IndexViewModel
+
+@foreach (var product in Model.Products)
+{
+    <tr class="first-line @product.Id">
+        <td class="editable-text product-table-name">@product.Name</td>
+        <td class="editable-file product-table-image">
+            @if (!string.IsNullOrEmpty(product.ImageUrl))
+            {
+                <img src="@Url.Content(product.ImageUrl)" />
+            }
+        </td>
+        <td class="editable-price product-table-price">
+            @if (!product.PriceAfterDiscount.HasValue)
+            {
+                <span class="editable-price">@product.Price</span> <span>Kč</span>
+            }
+            else
+            {
+                <strike class="editable-price">@product.Price</strike> <strike>Kč</strike> <span class="editable-price-discount">@product.PriceAfterDiscount</span> <span>Kč</span>
+            }
+        </td>
+        <td class="editable-quantity product-table-quantity">@product.Quantity ks</td>
+        <td class="product-table-buttons">
+            <button type="button" class="button-image text-center button-edit @product.Id" name="@product.Id"><img src="/site-files/edit.png" /></button>
+            <button type="button" class="button-image text-center button-delete @product.Id" name="@product.Id"><img src="/site-files/delete.png" /></button>
+        </td>
+    </tr>
+    <tr class="second-line @product.Id">
+        <td class="product-table-category">
+            @if (product.CategoryName != null)
+            {
+                <span class="product-tag">@product.CategoryName</span>
+            }
+            @if (product.New)
+            {
+                <span class="product-tag">#Novinka</span>
+            }
+            @if (product.PriceAfterDiscount > 0)
+            {
+                <span class="product-tag">#Sleva</span>
+            }
+        </td>
+        <td class="product-table-new hidden">
+            <label class="checkbox-inline">
+                <input class="checkbox new" type="checkbox" @(product.New ? "checked=\"checked\"" : "")>
+                <span>Novinka</span>
+            </label>
+        </td>
+        <td class="product-table-discount hidden">
+            <label class="checkbox-inline">
+                <input class="checkbox discount" type="checkbox" @(product.PriceAfterDiscount.HasValue ? "checked=\"checked\"" : "")>
+                <span>Sleva</span>
+            </label>
+        </td>
+        <td class="product-table-quantity hidden">
+            <button type="submit" class="btn btn-success save @product.Id" name="@product.Id">Uložit</button>
+        </td>
+        <td class="product-table-buttons hidden">
+            <button type="submit" class="btn btn-inverse btn-group throw-away @product.Id" name="@product.Id">Zahodit</button>
+        </td>
+    </tr>
+}

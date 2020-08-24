@@ -1,0 +1,178 @@
+﻿@using DutyFree.Web.ViewModels.Orders
+@model IndexViewModel
+
+@{
+    ViewBag.Title = "Orders";
+}
+
+@section header
+{
+    @if (ViewContext.RouteData.Values["action"].ToString() == "All")
+    {
+        <h2>Všechny objednávky</h2>
+    }
+    else
+    {
+        <h2>Moje objednávky</h2>
+    }
+}
+
+@section styles
+{
+    @Styles.Render("~/Content/datetimepicker")
+}
+
+<div class="date-container">
+    <div class="row">
+        <span class="from-to">Od</span>
+        <div class="form-group">
+            <div class='input-group date' id='datetimepicker1'>
+                @Html.TextBoxFor(m => m.From, new { @class = "form-control" })
+                <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <span class="from-to">Do</span>
+        <div class="form-group">
+            <div class='input-group date' id='datetimepicker2'>
+                @Html.TextBoxFor(m => m.To, new { @class = "form-control" })
+                <span class="input-group-addon">
+                    <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="replace">
+    </div>
+</div>
+
+@section scripts
+{
+    @Scripts.Render("~/bundles/moment")
+    @Scripts.Render("~/bundles/datetimepicker")
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#datetimepicker1, #datetimepicker1 > input').datetimepicker({
+                format: "DD.MM.YYYY",
+                locale: "cs"
+            });
+
+            $('#datetimepicker2, #datetimepicker2 > input').datetimepicker({
+                format: "DD.MM.YYYY",
+                locale: "cs"
+            });
+
+            filterOrders();
+
+            $(".container").on("click", ".button-image", function () {
+                var getId = $(this).attr("name");
+                var tr = $(this).closest("tr");
+
+                $.ajax({
+                    url: "@Url.Action("RemoveOrder","Orders")",
+                    type: "POST",
+                    data: { orderID: getId },
+                    success: function () {
+                        tr.remove();
+                    }
+                });
+            });
+
+            $(".date").on("dp.change", function () {
+                filterOrders();
+            });
+
+            $(".container").on("click", ".bought", function () {
+                var orderId = $(this).data("id"),
+                    isBought,
+                    isLoss;
+                if ($(this).closest("tr").find(".loss").is(":checked")) {
+                    isBought = false;
+                    isLoss = true;
+                    $(this).prop("checked", false);
+                }
+                else {
+                    if ($(this).is(":checked")) {
+                        isBought = true;
+                        isLoss = false;
+                    }
+                    else {
+                        isBought = false;
+                        isLoss = false;
+                    }
+                }
+
+                updateOrders(orderId, isBought, isLoss);
+            });
+
+            $(".container").on("click", ".loss", function () {
+                var orderId = $(this).data("id"),
+                    isBought,
+                    isLoss;
+                if ($(this).closest("tr").find(".bought").is(":checked")) {
+                    isBought = true;
+                    isLoss = false;
+                    $(this).prop("checked", false);
+                }
+                else {
+                    if ($(this).is(":checked")) {
+                        isLoss = true;
+                        isBought = false;
+                    }
+                    else {
+                        isLoss = false;
+                        isBought = false;
+                    }
+                }
+
+                updateOrders(orderId, isBought, isLoss);
+            });
+        });
+
+        function filterOrders() {
+            var from = $('#datetimepicker1').data('DateTimePicker').date().format("DD.MM.YYYY"),
+                to = $('#datetimepicker2').data('DateTimePicker').date().format("DD.MM.YYYY"),
+                allOrders,
+                url;
+
+            @if (ViewContext.RouteData.Values["action"].ToString() == "All")
+            {
+                <text>
+                    allOrders = true;
+                    url = "@Url.Action("FilterAll","Orders")";
+                </text>
+            }
+            else
+            {
+                <text>
+                    allOrders = false;
+                    url = "@Url.Action("FilterByUser","Orders")";
+                </text>
+            }
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: { from, to, allOrders },
+                success: function (result) {
+                    $(".replace").replaceWith(result);
+                }
+             });
+        }
+
+        function updateOrders(orderId, isBought, isLoss) {
+            $.ajax({
+                url: "@Url.Action("UpdateOrder","Orders")",
+                type: "POST",
+                data: { orderID: orderId, isBought: isBought, isLoss: isLoss },
+            });
+        }
+    </script>
+}

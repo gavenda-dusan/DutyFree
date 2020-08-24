@@ -1,0 +1,104 @@
+﻿@using DutyFree.Web.ViewModels.Orders
+@using System.Globalization
+@using System.Linq;
+@model IndexViewModel
+
+<div class="replace">
+    <table class="table orders-table">
+        <thead>
+            <tr>
+                @if (ViewContext.RouteData.Values["action"].ToString() == "FilterAll")
+                {
+                    <th class="text-center">Uživatel</th>
+                }
+                <th class="text-center">Datum</th>
+                <th class="text-center">Čas</th>
+                <th class="text-center">Produkt</th>
+                <th class="text-center">Cena</th>
+                @if (ViewContext.RouteData.Values["action"].ToString() == "FilterByUser")
+                {
+                    <th></th>
+                }
+                <th class="text-center">Zakoupeno?</th>
+                <th class="text-center">Ztráta</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    @if (ViewContext.RouteData.Values["action"].ToString() == "FilterAll")
+                    {
+                        <td class="text-center">@order.FullName</td>
+                    }
+                    <td class="text-center">@order.DateCreated.ToString("d", CultureInfo.CreateSpecificCulture("cs-CZ"))</td>
+                    <td class="text-center">@order.DateCreated.ToString("t", CultureInfo.CreateSpecificCulture("cs-CZ"))</td>
+                    <td class="name text-center">@order.ProductName</td>
+                    <td class="price text-center">@order.Price Kč</td>
+                    @if (ViewContext.RouteData.Values["action"].ToString() == "FilterByUser")
+                    {
+                        <td class="text-center">
+                            @if ((DateTime.Now - order.DateCreated).TotalHours < 24)
+                            {
+                                <button type="button" class="button-image" name="@order.OrderID">
+                                    <img src="@Url.Content("~/site-files/delete.png")" width="25" />
+                                </button>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <label>
+                                <input class="checkbox bought" type="checkbox" @(order.isBought ? "checked=\"checked\"" : "") data-id="@order.OrderID">
+                                <span></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label>
+                                <input class="checkbox loss" type="checkbox" @(order.IsLoss ? "checked=\"checked\"" : "") data-id="@order.OrderID">
+                                <span></span>
+                            </label>
+                        </td>
+                    }
+                    @if (ViewContext.RouteData.Values["action"].ToString() == "FilterAll")
+                    {
+                        <td class="text-center readonly">
+                            <label>
+                                <input class="checkbox bought" type="checkbox" disabled @(order.isBought ? "checked=\"checked\"" : "") data-id="@order.OrderID">
+                                <span></span>
+                            </label>
+                        </td>
+                        <td class="text-center readonly">
+                            <label>
+                                <input class="checkbox loss" type="checkbox" disabled @(order.IsLoss ? "checked=\"checked\"" : "") data-id="@order.OrderID">
+                                <span></span>
+                            </label>
+                        </td>
+                    }
+                </tr>
+            }
+            @if (Model.Orders.Count != 0)
+            {
+                <tr>
+                    <td class="text-center">Cena celkem:</td>
+                    <td></td>
+                    <td></td>
+                    @if (ViewContext.RouteData.Values["action"].ToString() == "FilterByUser")
+                    {
+                        <td class="text-center">@Model.Orders.Sum(item => item.Price) Kč</td>
+                        <td></td>
+                    }
+                    else
+                    {
+                        <td></td>
+                        <td class="text-center">@Model.Orders.Sum(item => item.Price) Kč</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="export">
+        <a class="btn" href="@Url.Action("ExportToExcel","Export", new { from = Model.From, to = Model.To, allOrders = ViewContext.RouteData.Values["action"].ToString() == "FilterAll" ? true : false })">
+            Export
+        </a>
+    </div>
+</div>

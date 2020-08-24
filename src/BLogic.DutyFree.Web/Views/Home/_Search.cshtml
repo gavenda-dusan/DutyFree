@@ -1,0 +1,51 @@
+﻿@using DutyFree.Web.ViewModels.Products
+@model IndexViewModel
+
+<div class="products-container">
+    @foreach (var product in Model.Products)
+    {
+        <div class="product @product.Id">
+            <div class="product-content">
+                @if (product.PriceAfterDiscount.HasValue && product.Price < product.PriceAfterDiscount)
+                {
+                    <div class="product-discount">
+                        <span class="product-discount-text">+ @Math.Round((((double)product.PriceAfterDiscount - (double)product.Price) / (double)product.PriceAfterDiscount) * 100) %</span>
+                    </div>
+                }
+                @if (product.PriceAfterDiscount.HasValue && product.Price >= product.PriceAfterDiscount)
+                {
+                    <div class="product-discount">
+                        <span class="product-discount-text">- @Math.Round((((double)product.Price - (double)product.PriceAfterDiscount) / (double)product.Price) * 100) %</span>
+                    </div>
+                }
+                @if (product.New)
+                {
+                    <div class="product-new" @(product.PriceAfterDiscount.HasValue ? "style=top:80px" : "")>
+                        <span class="text-uppercase">New</span>
+                    </div>
+                }
+                <div class="product-image">
+                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                    {
+                        <img src="@Url.Content(product.ImageUrl)" />
+                    }
+                </div>
+                <div class="product-info">
+                    <div class="product-name @product.Id">@product.Name</div>
+                    <div class="product-quantity @product.Id">Skladem @product.Quantity ks</div>
+                </div>
+                <div class="product-actions">
+                    @if (!product.PriceAfterDiscount.HasValue)
+                    {
+                        <span class="product-price @product.Id">@product.Price Kč</span>
+                    }
+                    else
+                    {
+                        <span class="product-price @product.Id">@product.PriceAfterDiscount Kč</span>
+                    }
+                    <button type="button" class="btn btn-success buy-button" name="@product.Id">Koupit</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
